@@ -1,7 +1,17 @@
 {
-    "config": {
-        "platform": {
-            "php": "7.4.5"
-        }
+    "name": "vladlen/html-parser",
+    "type": "library",
+    "description": "Serpstat test task. Recursively gets images links from a domain. Saves internal and external links.",
+    "keywords": ["scraper", "parser", "html", "links", "image"],
+    "homepage": "https://github.com/juster-name/php-html-parser",
+    "license": "MIT",
+    "authors": [{
+        "name": "Vladlen Kazmiruk",
+        "email": "vladlen044@gmail.com",
+        "homepage": "https://github.com/juster-name",
+        "role": "Developer"
+    }],
+    "require": {
+        "php": ">=7.4.0"
     }
 }
