@@ -7,3 +7,7 @@ launch.json
 
 #phpExe
 /php
+
+#composer
+*composer*
+!composer.php
