@@ -1,2 +1,6 @@
 # logs
 *.log
+
+#vsCode
+launch.json
+/.vsCode
