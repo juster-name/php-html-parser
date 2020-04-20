@@ -4,3 +4,6 @@
 #vsCode
 launch.json
 /.vsCode
+
+#phpExe
+/php
