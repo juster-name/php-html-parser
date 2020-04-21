@@ -5,7 +5,8 @@ use Exception;
 
 interface IHtmlCrawler
 {
-    public function getElementsByTagName($tagName, $url);
+    public function loadHTMLFile($url);
+    public function getTagsByName($tagName) : \Traversable;
 }
 
 class HtmlCrawler implements IHtmlCrawler
@@ -15,41 +16,29 @@ class HtmlCrawler implements IHtmlCrawler
 
     function __construct($url = null)
     {
-        $this->lazyInit($url);
+        $this->doc = new \DOMDocument();
+        $this->url = $url;
     }
 
-    public function getElementsByTagName($tagName, $url = null)
+    public function loadHTMLFile($url)
     {
-        if ($this->lazyLoad($url) === false)
-        {
-            return false;
-        }
-
-        return $this->doc->getElementsByTagName($tagName);
-    }
-
-    private function lazyLoad($url, $noWarning = true)
-    {
-        $this->lazyInit($url);
-
         if (empty($url))
         {
             throw new Exception("URL must not be empty while loading HTML file");
         }
 
-        return $noWarning ? @$this->doc->loadHTMLFile($url) : $this->doc->loadHTMLFile($url);
+        return @$this->doc->loadHTMLFile($url);
     }
-
-    private function lazyInit($url)
+   
+    public function getTagsByName($tagName)
     {
-        if (!empty($url))
+        $tags = [];
+        foreach ($this->doc->getElementsByTagName($tagName) as $el)
         {
-            $this->url = $url;           
+            array_push($tags, new Tag($el));
         }
-        if (empty($this->doc) && !empty($this->url))
-        {
-            $this->doc = new \DOMDocument();
-        }
+
+        return $tags;
     }
 }
 

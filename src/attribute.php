@@ -5,28 +5,21 @@ namespace Test\Parser;
 interface IAttribute
 {
     public function getName();
-    public function getFilter();
 }
 
 class Attribute implements IAttribute
 {
-    public $name;
-    /** @var IFilter */
-    public $filter;
+    /** @var \DOMAttr */
+    private $domAttr;
 
-    function __construct($name, IFilter $filter = null)
+    function __construct(\DOMAttr $domAttr)
     {
-        $this->name = $name;
-        $this->filter = $filter;
+        $this->domAttr = $domAttr;
     }
 
     public function getName()
     {
-        return $this->name;
-    }
-    public function getFilter()
-    {
-        return $this->filter;
+        return $this->domAttr->name;
     }
 }
 

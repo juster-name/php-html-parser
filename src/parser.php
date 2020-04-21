@@ -1,12 +1,21 @@
 <?php
-namespace Test\Parser;
 require_once ("htmlCrawler.php");
 
-class Parser
+namespace Test\Parser;
+interface IParser
 {
-    function __construct(ICrawler $crawler, $)
+    public function parse($url);
+}
+class Parser implements IParser
+{
+    public $crawler;
+    function __construct(IHtmlCrawler $crawler)
     {
-        
+        $this->crawler = $crawler;
+    }
+    public function parse($url)
+    {
+        //$this->crawler->
     }
 }
 
