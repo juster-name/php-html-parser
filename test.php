@@ -1,4 +1,18 @@
 <?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+function lol($param)
+{
+    echo "\n". $param . "\n";
+}
+use Test\Parser as p;
+
+$p = new p\Parser(new p\HtmlCrawler());
+$p->onStart->add(new p\UserCallActionParam("\\lol"));
+$p->onStart->add(new p\TestFindAction());
+$p->parse("https://google.com");
+
 /*
 $domain = "https://translate.google.com.ua/";
 $domainShort = "translate.google.com.ua";
@@ -168,5 +182,5 @@ foreach ($error as $element)
     _logInFile($element, "error.txt");
 }
 _logInFile("-------END--------","error.txt");
-
+*/
 ?>

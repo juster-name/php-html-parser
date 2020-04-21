@@ -47,7 +47,5 @@ class Parser implements IParser
         */
     }
 }
-$p = new Parser(new HtmlCrawler());
-$p->onStart->add(new TestFindAction());
-$p->parse("https://google.com");
+
 ?>
