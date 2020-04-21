@@ -6,7 +6,7 @@ use Exception;
 interface IHtmlCrawler
 {
     public function loadHTMLFile($url);
-    public function getTagsByName($tagName) : \Traversable;
+    public function getTagsByName($tagName);
 }
 
 class HtmlCrawler implements IHtmlCrawler
@@ -20,9 +20,14 @@ class HtmlCrawler implements IHtmlCrawler
         $this->url = $url;
     }
 
-    public function loadHTMLFile($url)
+    public function loadHTMLFile($url = null)
     {
-        if (empty($url))
+        if (empty($this->url))
+        {
+            $this->url = $url;
+        }
+
+        if (empty($this->url))
         {
             throw new Exception("URL must not be empty while loading HTML file");
         }

@@ -1,9 +1,9 @@
 <?php
+namespace Test\Parser;
 
 require_once ('attribute.php');
 require_once ('htmlLoader.php');
 
-namespace Test\Parser;
 
 interface ITag
 {

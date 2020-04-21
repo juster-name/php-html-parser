@@ -1,5 +1,5 @@
 <?php
-
+/*
 $domain = "https://translate.google.com.ua/";
 $domainShort = "translate.google.com.ua";
 

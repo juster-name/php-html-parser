@@ -1,6 +1,7 @@
 <?php
-require_once ("action.php");
 namespace Test\Parser;
+
+require_once ("action.php");
 
 interface IBasicParamEvent
 {
@@ -9,21 +10,20 @@ interface IBasicParamEvent
     public function invoke($param);
 }
 
-class BasicEvent implements IBasicParamEvent
+class BasicParamEvent implements IBasicParamEvent
 {
     public $actions = [];
     public function add(IActionParam $callback)
     {
-        array_push($callback);
+        $funcName = get_class($callback);
+
+        $this->actions[$funcName] = $callback;
     }
     public function remove(IActionParam $callback)
     {
-        $index = array_search($callback->getName(), $this->actions);
-        if ($index === false)
-        {
-            return;
-        }
-        array_splice($this->actions, $index, 1);
+        $funcName = get_class($callback);
+
+        unset($this->actions[$funcName]);
     }
     public function invoke($param)
     {
