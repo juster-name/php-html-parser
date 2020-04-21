@@ -6,9 +6,12 @@ interface IParser
 {
     public function parse($url);
 }
+
 class Parser implements IParser
 {
     public $crawler;
+    public IBasicParamEvent $onFind;
+
     function __construct(IHtmlCrawler $crawler)
     {
         $this->crawler = $crawler;
