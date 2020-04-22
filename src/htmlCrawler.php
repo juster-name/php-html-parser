@@ -1,9 +1,12 @@
 <?php
 namespace Test\Parser;
 
-use Exception;
+interface ICrawler
+{
+    public function load($param);
+}
 
-interface IHtmlCrawler
+interface IHtmlCrawler extends ICrawler
 {
     public function loadHTMLFile($url);
     public function getTagsByName($tagName);
@@ -19,6 +22,11 @@ class HtmlCrawler implements IHtmlCrawler
         $this->doc = new \DOMDocument();
         $this->url = $url;
     }
+    public function load($param)
+    {
+        return @$this->doc->loadHTMLFile($param);
+    }
+
     public function loadHTMLFile($url = null)
     {
         if (empty($this->url))
@@ -28,10 +36,10 @@ class HtmlCrawler implements IHtmlCrawler
 
         if (empty($this->url))
         {
-            throw new Exception("URL must not be empty while loading HTML file");
+            throw new \Exception("URL must not be empty while loading HTML file");
         }
 
-        return @$this->doc->loadHTMLFile($url);
+        $this->load($url);
     }
    
     public function getTagsByName($tagName)

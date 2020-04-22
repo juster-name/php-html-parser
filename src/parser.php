@@ -6,12 +6,17 @@ require_once ("htmlCrawler.php");
 
 interface IParser
 {
-    public function parse($url);
+    public function parse($path);
+    
+}
+interface IHtmlParser extends IParser
+{
+    public function parse($path);
 }
 
-class Parser implements IParser
+class HtmlParser implements IHtmlParser
 {
-    public $crawler;
+    public IHtmlCrawler $crawler;
     public IBasicParamEvent $onFind;
     public IBasicParamEvent $onError;
     public IBasicParamEvent $onFileLoading;
@@ -30,7 +35,7 @@ class Parser implements IParser
     }
     public function parse($url)
     {
-        //$this->crawler->loadHTMLFile($url);
+        $this->crawler->loadHTMLFile($url);
         $this->onStart->invoke($url);
         /*
         while (empty($queue) === false) 
@@ -40,7 +45,7 @@ class Parser implements IParser
                 ['a'=> 
                     ['href', 'findHref'],
                 ]);
-    
+                
             
         }
         */
