@@ -11,5 +11,5 @@ launch.json
 
 #composer
 /composer
-/vendor
+/vendor/
 composer.lock

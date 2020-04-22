@@ -10,13 +10,13 @@ echo __DIR__ . "\\vendor\\autoload.php";
 */
 use Test\Parser as p;
 
+
 function lol($param)
 {
     echo "\n". $param . "\n";
 }
 
-
-$p = new p\Parser(new p\HtmlCrawler());
+$p = new p\HtmlParser(new p\HtmlCrawler());
 
 $p->onStart->add(new p\UserCallActionParam("\\lol"));
 $p->onStart->add(new p\TestFindAction());
