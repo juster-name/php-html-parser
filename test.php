@@ -1,14 +1,23 @@
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
+require_once (__DIR__."/vendor/autoload.php");
+
+//echo __DIR__ . "\\vendor\\autoload.php";
+/*
+
+echo __DIR__ . "\\vendor\\autoload.php";
+//require ('src/parser.php');
+*/
+use Test\Parser as p;
 
 function lol($param)
 {
     echo "\n". $param . "\n";
 }
-use Test\Parser as p;
+
 
 $p = new p\Parser(new p\HtmlCrawler());
+
 $p->onStart->add(new p\UserCallActionParam("\\lol"));
 $p->onStart->add(new p\TestFindAction());
 $p->parse("https://google.com");

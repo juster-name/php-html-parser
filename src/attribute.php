@@ -1,8 +1,6 @@
 <?php
 namespace Test\Parser;
 
-require_once ('filter.php');
-
 interface IAttribute
 {
     public function getName();

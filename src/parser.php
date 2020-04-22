@@ -13,14 +13,14 @@ interface IHtmlParser extends IParser
     public function parse($path);
 }
 
-class HtmlParser implements IHtmlParser
+class Parser implements IHtmlParser
 {
     public IHtmlCrawler $crawler;
-    public IBasicParamEvent $onFind;
-    public IBasicParamEvent $onError;
-    public IBasicParamEvent $onFileLoading;
-    public IBasicParamEvent $onFileLoaded;
-    public IBasicParamEvent $onStart;
+    public BasicParamEvent $onFind;
+    public BasicParamEvent $onError;
+    public BasicParamEvent $onFileLoading;
+    public BasicParamEvent $onFileLoaded;
+    public BasicParamEvent $onStart;
 
     function __construct(IHtmlCrawler $crawler)
     {
@@ -50,5 +50,16 @@ class HtmlParser implements IHtmlParser
         */
     }
 }
+
+function lol($param)
+{
+    echo "\n". $param . "\n";
+}
+
+$p = new Parser(new HtmlCrawler());
+
+$p->onStart->add(new UserCallActionParam("Test\\Parser\\lol"));
+$p->onStart->add(new TestFindAction());
+$p->parse("https://google.com");
 
 ?>
