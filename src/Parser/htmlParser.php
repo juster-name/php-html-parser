@@ -5,14 +5,9 @@ require_once ("crawler.php");
 
 interface IParser
 {
-    public function parse($path);
-    
+    public function parse($path);    
 }
 
-interface IParseOptions
-{
-    public function getFindOptions() : array;
-}
 
 abstract class BaseParser implements IParser
 {
