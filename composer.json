@@ -16,7 +16,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Test\\Parser\\": "./src/"
+            "Test\\Parser\\": "src\\Parser"
+
         }
     }
 }
