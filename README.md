@@ -5,7 +5,7 @@ Serpstat test task. Recursively gets images links from a domain. Saves internal 
 
 ###### Add to composer.json:
 
-```
+```json
 {
     "require": {
         "vladlen/html-parser": "dev-master"
@@ -18,7 +18,7 @@ Serpstat test task. Recursively gets images links from a domain. Saves internal 
 
 ## Usage:
 
-```
+```php
 <?php
 namespace Test\Parser;
 require_once (__DIR__."/vendor/autoload.php");
