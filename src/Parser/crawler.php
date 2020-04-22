@@ -9,7 +9,7 @@ interface ICrawler
 interface IHtmlCrawler extends ICrawler
 {
     public function loadHTMLFile($url) : bool;
-    public function getTagsByName($tagName) : \Traversable;
+    public function getElementsByTagName($tagName);
 }
 
 class HtmlCrawler implements IHtmlCrawler
@@ -42,7 +42,7 @@ class HtmlCrawler implements IHtmlCrawler
         return $this->load($url);
     }
    
-    public function getTagsByName($tagName): \Traversable
+    public function getElementsByTagName($tagName) : \DOMNodeList
     {
         return $this->doc->getElementsByTagName($tagName);
     }
