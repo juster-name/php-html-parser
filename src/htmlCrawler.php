@@ -19,7 +19,6 @@ class HtmlCrawler implements IHtmlCrawler
         $this->doc = new \DOMDocument();
         $this->url = $url;
     }
-
     public function loadHTMLFile($url = null)
     {
         if (empty($this->url))
@@ -37,13 +36,7 @@ class HtmlCrawler implements IHtmlCrawler
    
     public function getTagsByName($tagName)
     {
-        $tags = [];
-        foreach ($this->doc->getElementsByTagName($tagName) as $el)
-        {
-            array_push($tags, new Tag($el));
-        }
-
-        return $tags;
+        return $this->doc->getElementsByTagName($tagName);
     }
 }
 

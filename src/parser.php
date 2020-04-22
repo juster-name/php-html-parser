@@ -4,7 +4,6 @@ namespace Test\Parser;
 require_once ("event.php");
 require_once ("htmlCrawler.php");
 
-
 interface IParser
 {
     public function parse($url);

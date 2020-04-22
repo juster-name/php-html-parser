@@ -8,14 +8,11 @@ interface IAttribute
     public function getName();
 }
 
-class Attribute implements IAttribute
+class Attribute extends \DOMAttr implements IAttribute
 {
-    /** @var \DOMAttr */
-    private $domAttr;
-
     function __construct(\DOMAttr $domAttr)
     {
-        $this->domAttr = $domAttr;
+        $this = $domAttr;
     }
 
     public function getName()

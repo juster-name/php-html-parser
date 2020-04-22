@@ -39,22 +39,19 @@ class TagArray implements \IteratorAggregate
 
 class Tag implements ITag
 {
-    /** @var \DOMElement */
-    private $domElement;
-
     function __construct(\DOMElement $element)
     {
-        $this->domElement = $element;
+        $this = $element;
     }
 
     public function getName()
     {
-        return $this->domElement->tagName;
+        return $this->tagName;
     }
 
     public function getAttribute($name)
     {
-        return $this->domElement->getAttribute($name);
+        return $this->getAttribute($name);
     }
 }
 
