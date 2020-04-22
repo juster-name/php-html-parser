@@ -15,13 +15,13 @@ class BasicParamEvent implements IBasicParamEvent
     public $actions = [];
     public function add(IActionParam $callback)
     {
-        $funcName = get_class($callback);
+        $funcName = $callback->getName();
 
         $this->actions[$funcName] = $callback;
     }
     public function remove(IActionParam $callback)
     {
-        $funcName = get_class($callback);
+        $funcName = $callback->getName();
 
         unset($this->actions[$funcName]);
     }
