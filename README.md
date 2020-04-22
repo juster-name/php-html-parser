@@ -19,7 +19,6 @@ Serpstat test task. Recursively gets images links from a domain. Saves internal 
 ## Usage:
 
 ```php
-<?php
 namespace Test\Parser;
 require_once (__DIR__."/vendor/autoload.php");
 
