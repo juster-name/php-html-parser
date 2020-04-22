@@ -1,4 +1,5 @@
 <?php
+namespace Test\Parser;
 
 require_once (__DIR__."/vendor/autoload.php");
 
@@ -6,21 +7,41 @@ require_once (__DIR__."/vendor/autoload.php");
 /*
 
 echo __DIR__ . "\\vendor\\autoload.php";
-//require ('src/parser.php');
+
 */
-use Test\Parser as p;
-
-
+set_include_path(__DIR__."\\src\\Parser");
+require ('htmlParser.php');
+require ('filters.php');
 function lol($param)
 {
-    echo "\n". $param . "\n";
+   // echo "\n". $param . "\n";
 }
 
-$p = new p\HtmlParser(new p\HtmlCrawler());
+/*
 
-$p->onStart->add(new p\UserCallActionParam("\\lol"));
-$p->onStart->add(new p\TestFindAction());
-$p->parse("https://google.com");
+$aTagOption = new SimpleOption("a");
+$hrefAttrOption = new SimpleOption("href", new HrefFilter("http://google.com"));
+
+$parseOptions = new p\HtmlOptionsArray(
+    new HtmlOption($aTagOption, $hrefAttrOption));
+*/
+$url = "https://google.com/";
+$hrefFilter =  new HrefFilter($url);
+$htmlCrawler = new HtmlCrawler();
+
+$aHrefOption = new Option('a', null, 
+    [new Option('href', $hrefFilter)]);
+
+$p = new HtmlParser($htmlCrawler, [$aHrefOption]);
+$logAction = new UserCallActionParam("Test\\Parser\\_log");
+$p->onLog->add($logAction);
+
+$p->parse($url);
+
+
+//$p->onStart->add(new UserCallActionParam("\\lol"));
+//$p->onStart->add(new TestFindAction());
+//$p->parse("https://google.com");
 
 /*
 $domain = "https://translate.google.com.ua/";
@@ -33,30 +54,29 @@ $external = [];
 $error = [];
 array_push($queue, $domain);
 array_push($internal, $domain);
+*/
 
-function _logInFile($val, $fname = null)
+function _logInFile($val)
 {
     $curDir = dirname(__FILE__);
 
-    if (empty($fname))
-    {
-        $fname = "log.txt";
-    }
+    $fname = "log.txt";
+    
 
     $fullVal = date("H:i:s") . ": " . $val . "\r\n"; 
 
     file_put_contents($curDir . "/$fname", $fullVal, FILE_APPEND);
 }
 
-function _log($val, $fname = null)
+function _log($val)
 {
-    $fname ?: "log.txt";
+    $fname = "log.txt";
     _logInFile($val, $fname);
 
     $fullVal = date("H:i:s") . ": " . $val . "\r\n"; 
     echo $fullVal; 
 }
-
+/*
 function parse($tagsAtts)
 {
     global $document;
