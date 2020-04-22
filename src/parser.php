@@ -13,7 +13,7 @@ interface IHtmlParser extends IParser
     public function parse($path);
 }
 
-class Parser implements IHtmlParser
+class HtmlParser implements IHtmlParser
 {
     public IHtmlCrawler $crawler;
     public BasicParamEvent $onFind;
@@ -50,16 +50,5 @@ class Parser implements IHtmlParser
         */
     }
 }
-
-function lol($param)
-{
-    echo "\n". $param . "\n";
-}
-
-$p = new Parser(new HtmlCrawler());
-
-$p->onStart->add(new UserCallActionParam("Test\\Parser\\lol"));
-$p->onStart->add(new TestFindAction());
-$p->parse("https://google.com");
 
 ?>
