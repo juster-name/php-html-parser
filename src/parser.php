@@ -1,5 +1,7 @@
 <?php
 namespace Test\Parser;
+require_once ("event.php");
+require_once ("crawler.php");
 
 interface IParser
 {
