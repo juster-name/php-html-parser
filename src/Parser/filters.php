@@ -1,12 +1,7 @@
 <?php
 namespace Test\Parser;
 
-interface IFilter
-{
-    public function filter($var);
-}
-
-class HrefFilter implements IFilter
+class HrefFilter implements IActionParam
 {
     public $domainName;
 
@@ -15,7 +10,7 @@ class HrefFilter implements IFilter
         $this->domainName = $domainName;
     }
 
-    public function filter($var)
+    public function run($var)
     {
         if (filter_var($var, FILTER_VALIDATE_URL) === false) 
         {
@@ -25,9 +20,9 @@ class HrefFilter implements IFilter
     }
 }
 
-class ImgFilter implements IFilter
+class ImgFilter implements IActionParam
 {
-    public function filter($var)
+    public function run($var)
     {
     }
 }
