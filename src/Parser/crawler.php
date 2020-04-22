@@ -8,8 +8,8 @@ interface ICrawler
 
 interface IHtmlCrawler extends ICrawler
 {
-    public function loadHTMLFile($url);
-    public function getTagsByName($tagName);
+    public function loadHTMLFile($url) : bool;
+    public function getTagsByName($tagName) : \Traversable;
 }
 
 class HtmlCrawler implements IHtmlCrawler
@@ -27,7 +27,7 @@ class HtmlCrawler implements IHtmlCrawler
         return @$this->doc->loadHTMLFile($param);
     }
 
-    public function loadHTMLFile($url = null)
+    public function loadHTMLFile($url = null) : bool
     {
         if (empty($this->url))
         {
@@ -39,10 +39,10 @@ class HtmlCrawler implements IHtmlCrawler
             throw new \Exception("URL must not be empty while loading HTML file");
         }
 
-        $this->load($url);
+        return $this->load($url);
     }
    
-    public function getTagsByName($tagName)
+    public function getTagsByName($tagName): \Traversable
     {
         return $this->doc->getElementsByTagName($tagName);
     }
