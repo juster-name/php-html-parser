@@ -1,44 +1,81 @@
 <?php
 namespace Test\Parser;
-
 require_once (__DIR__."/vendor/autoload.php");
-
-//echo __DIR__ . "\\vendor\\autoload.php";
-/*
-
-echo __DIR__ . "\\vendor\\autoload.php";
-
-*/
 set_include_path(__DIR__."\\src\\Parser");
 require ('htmlParser.php');
 require ('filters.php');
-function lol($param)
-{
-   // echo "\n". $param . "\n";
-}
 
-/*
+$internal = [];
+$external = [];
 
-$aTagOption = new SimpleOption("a");
-$hrefAttrOption = new SimpleOption("href", new HrefFilter("http://google.com"));
+$url = "https://www.uavi.top/login.php/";
 
-$parseOptions = new p\HtmlOptionsArray(
-    new HtmlOption($aTagOption, $hrefAttrOption));
-*/
-$url = "https://google.com/";
+
+
 $hrefFilter =  new HrefFilter($url);
 $htmlCrawler = new HtmlCrawler();
 
 $aHrefOption = new Option('a', null, 
     [new Option('href', $hrefFilter)]);
 
-$p = new HtmlParser($htmlCrawler, [$aHrefOption]);
+use Test\Parser\ParserSettings as PS;
+
+$p = new HtmlParser($htmlCrawler, [$aHrefOption], PS::Recursive);
 $logAction = new UserCallActionParam("Test\\Parser\\_log");
+
+$saveInternalAction = new InvokeActionParam(function($url) use (&$internal, &$hrefFilter)
+{ 
+    if ($hrefFilter->getUrlHost() == parse_url($url, PHP_URL_HOST))
+    {
+        array_push($internal, $url);
+    }
+});
+
+$saveExternalAction = new InvokeActionParam(function($url) use (&$external, &$hrefFilter)
+{     
+    if ($hrefFilter->getUrlHost() != parse_url($url, PHP_URL_HOST))
+    {
+        array_push($external, $url);
+    }
+});
+
 $p->onLog->add($logAction);
+
+$p->onFilterSuccess->add($saveInternalAction);
+$p->onFilterSuccess->add($saveExternalAction);
 
 $p->parse($url);
 
+echo "\n\n INTERNALS: ";
+foreach ($internal as $url)
+{
+    echo "\n$url";
+}
 
+echo "\n\n EXTERNALS: ";
+foreach ($external as $url)
+{
+    echo "\n$url";
+}
+/*
+$recursiveAction = new InvokeActionParam(function ($url) use ($p)
+{
+    $domain = urlToDomain($p->getPath());
+
+    if (strpos($url, $domain) !== false) 
+    {
+        $p->parse($url);
+    }
+});
+
+$p->onFilterSuccess->add($recursiveAction);
+$p->parse($url);
+
+function urlToDomain($url) {
+    return implode(array_slice(explode('/', preg_replace('/https?:\/\/(www\.)?/', '', $url)), 0, 1));
+ }
+
+ */
 //$p->onStart->add(new UserCallActionParam("\\lol"));
 //$p->onStart->add(new TestFindAction());
 //$p->parse("https://google.com");
