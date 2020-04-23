@@ -1,20 +1,45 @@
 <?php
 namespace Test\Parser;
+require_once ('action.php');
 
 class HrefFilter implements IActionParam
 {
-    public $domainName;
+    private $urlHost;
+    private $urlScheme;
+    private $url;
 
-    function __construct($domainName)
+    function __construct($url)
     {
-        $this->domainName = $domainName;
+        $this->setUrl($url);
     }
 
+    public function setUrl($url) 
+    {
+        $this->url = $url;
+        $this->urlHost = parse_url($this->url , PHP_URL_HOST);
+        $this->urlScheme = parse_url($this->url , PHP_URL_SCHEME);
+    }
+
+    public function getUrlScheme() 
+    {
+        return $this->urlScheme;
+    }
+
+    public function getUrlHost() 
+    {
+        return $this->urlHost;
+    }
+
+    public function getUrl() 
+    {
+        return $this->url;    
+    }
+      
     public function run($var)
     {
         if (filter_var($var, FILTER_VALIDATE_URL) === false) 
         {
-            return $this->domainName . "/" . $var;
+            return $this->urlScheme . "://" . $this->urlHost . "/" . $var;
         }
         return $var;
     }
@@ -28,6 +53,7 @@ class ImgFilter implements IActionParam
 {
     public function run($var)
     {
+
     }
     public function getName() : string
     {
