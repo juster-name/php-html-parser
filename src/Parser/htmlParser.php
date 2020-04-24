@@ -6,10 +6,9 @@ require_once ("crawler.php");
 
 interface IParser
 {
-    public function parse($path);  
+    public function parse(string $path);
+
     public function getPath();
-    public function getOptions() : array;
-    public function getSettings() : int;
 }
 
 abstract class ParserSettings
@@ -20,7 +19,10 @@ abstract class ParserSettings
 
 abstract class BaseHtmlParser implements IParser
 {
+    public ICrawler $crawler;
     public array $findOptions;
+    public IActionParam $hrefFilter;
+
     public int $settings;
     public BasicParamEvent $onLog;
     public BasicParamEvent $onFind;
@@ -32,10 +34,12 @@ abstract class BaseHtmlParser implements IParser
     public BasicParamEvent $onStart;
     public BasicParamEvent $onEnd;
     
-    function __construct(array $findOptions, int $settings)
+    function __construct(array $findOptions, int $settings, ICrawler $crawler, IActionParam $hrefFilter)
     {
         $this->findOptions = $findOptions;
+        $this->hrefFilter = $hrefFilter;
         $this->settings = $settings;
+        $this->crawler = $crawler;
 
         $this->onFind = new BasicParamEvent();
         $this->onError = new BasicParamEvent();
@@ -47,9 +51,18 @@ abstract class BaseHtmlParser implements IParser
         $this->onFilterFail = new BasicParamEvent();     
         $this->onLog= new BasicParamEvent();
     }
+
     abstract public function parse($path);
     abstract public function getPath();
 
+    public function getCrawler()
+    {
+        return $this->crawler;
+    }
+    public function setCrawler(ICrawler $crawler)
+    {
+        $this->crawler = $crawler;
+    }
     public function getSettings() : int
     {
         return $this->settings;
@@ -58,6 +71,24 @@ abstract class BaseHtmlParser implements IParser
     public function getOptions() : array
     {
         return $this->findOptions;
+    }
+
+    public function setOptions(array $options)
+    {
+        $this->findOptions = $options;
+    }
+    public function setSettings(int $settings)
+    {
+        $this->settings = $settings;
+    }
+
+    public function setHrefFilter(IActionParam $hrefFilter)
+    {
+        $this->hrefFilter = $hrefFilter;
+    }
+    public function getHrefFilter()
+    {
+        return $this->hrefFilter;
     }
 }
 
@@ -69,10 +100,11 @@ class HtmlParser extends BaseHtmlParser
     private array $urlVisitedStack = [];
     private array $urlToParseStack = [];
 
-    function __construct(IHtmlCrawler $crawler, array $findOptions, int $settings)
+    function __construct(array $findOptions, int $settings)
     {
-        parent::__construct($findOptions, $settings);
-        $this->crawler = $crawler;
+        $htmlCrawler =  new HtmlCrawler();
+        $hrefFilter = new HrefFilter();
+        parent::__construct($findOptions, $settings, $htmlCrawler, $hrefFilter);
     }
     private function log($val)
     {
@@ -80,20 +112,21 @@ class HtmlParser extends BaseHtmlParser
     }
     public function getPath()
     {
-        return $this->url;
+        return $this->startUrl;
     }
+
     public function parse($url)
-    {
-        $this->startUrl = $url;
+    {       
+        $this->startUrl = $this->hrefFilter->run($url);;
         $this->startDomain = parse_url($this->startUrl , PHP_URL_HOST);
-        array_push($this->urlToParseStack, $url);
+        array_push($this->urlToParseStack, $this->startUrl);
 
         $this->log("--------START--------");
-        $this->onStart->invoke($url);    
+        $this->onStart->invoke($this->startUrl);    
 
         $this->parseJob();
 
-        $this->onEnd->invoke($url);    
+        $this->onEnd->invoke($this->startUrl);    
         $this->log("-------END--------");
     }
 
@@ -106,7 +139,14 @@ class HtmlParser extends BaseHtmlParser
             $this->log("Creating DOM and loading HTML file from \"$this->startUrl\": ");
             $this->onFileLoading->invoke($url);
 
-            $this->crawler->loadHTMLFile($url);
+            try
+            {
+                $this->crawler->load($url);
+            }
+            catch(\Exception $ex)
+            {
+                echo $ex;
+            }
             $this->onFileLoaded->invoke($url);
 
             $this->crawlPage();
@@ -118,7 +158,7 @@ class HtmlParser extends BaseHtmlParser
     {
         foreach($this->findOptions as $tagOptions)
         {
-            $elements = $this->crawler->getElementsByTagName($tagOptions->getValue());
+            $elements = $this->crawler->crawl($tagOptions->getValue());
             $this->log(count($elements) . " elements found");
 
             foreach($elements as $node)
@@ -148,20 +188,25 @@ class HtmlParser extends BaseHtmlParser
 
             $newUrl = $this->doFilter($option->getFilter(), $attrValue);
 
-            if ($attrName == 'href' && $this->canAddNewUrl($newUrl))
+            if ($attrName == 'href')
             {
-                array_push($this->urlToParseStack, $newUrl);
+                $newUrl = $this->hrefFilter->run($newUrl);
+                if ($this->canAddNewUrl($newUrl))
+                {
+                    array_push($this->urlToParseStack, $newUrl);
+                }
             }
         }
     }
 
     private function canAddNewUrl($newUrl)
     {
-        if ($this->isSettingsSet(ParserSettings::Recursive) && $this->canVisit($newUrl) === true)
+        if ($this->isSettingsSet(ParserSettings::Recursive))
         {
-            return false;
+            $canVisit = $this->canVisit($newUrl);
+            return $canVisit;
         }
-        return true;
+        return false;
     }
 
     private function isSettingsSet(int $flags)
@@ -177,7 +222,7 @@ class HtmlParser extends BaseHtmlParser
     {
         $hrefDomain = parse_url($url , PHP_URL_HOST);
         $isCurrentDomain = $hrefDomain == $this->startDomain;
-        
+
         return 
         $this->isAlreadyVisited($url) === false && 
         ($isCurrentDomain ? true :
@@ -193,7 +238,7 @@ class HtmlParser extends BaseHtmlParser
         $this->log("Filtering \"$val\"");
         $filterValue = $filter->run($val);
 
-        if ($filterValue !== false)
+        if (isset($filterValue) && $filterValue !== false)
         {
             $this->log("Success");  
             $this->onFilterSuccess->invoke($filterValue);
