@@ -3,31 +3,22 @@ namespace Test\Parser;
 
 interface ICrawler
 {
-    public function load($param);
+    public function load($param) : bool;
+    public function crawl($param);
 }
 
-interface IHtmlCrawler extends ICrawler
+class HtmlCrawler implements ICrawler
 {
-    public function loadHTMLFile($url) : bool;
-    public function getElementsByTagName($tagName);
-}
-
-class HtmlCrawler implements IHtmlCrawler
-{
-    public $url;
     private $doc;
+    public bool $isNoWarnings;
 
-    function __construct($url = null)
+    function __construct($isNoWarnings = true)
     {
+        $this->isNoWarnings = $isNoWarnings;
         $this->doc = new \DOMDocument();
-        $this->url = $url;
-    }
-    public function load($param)
-    {
-        return @$this->doc->loadHTMLFile($param);
     }
 
-    public function loadHTMLFile($url = null) : bool
+    public function load($url = null) : bool
     {
         if (empty($this->url))
         {
@@ -39,10 +30,10 @@ class HtmlCrawler implements IHtmlCrawler
             throw new \Exception("URL must not be empty while loading HTML file");
         }
 
-        return $this->load($url);
+        return $this->isNoWarnings ? @$this->doc->loadHTMLFile($url) : $this->doc->loadHTMLFile($url);;
     }
    
-    public function getElementsByTagName($tagName) : \DOMNodeList
+    public function crawl($tagName) : \DOMNodeList
     {
         return $this->doc->getElementsByTagName($tagName);
     }
