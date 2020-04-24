@@ -22,6 +22,7 @@ abstract class BaseHtmlParser implements IParser
     public ICrawler $crawler;
     public array $findOptions;
     public IActionParam $hrefFilter;
+    protected $startUrl = '';
 
     public int $settings;
     public BasicParamEvent $onLog;
@@ -33,7 +34,9 @@ abstract class BaseHtmlParser implements IParser
     public BasicParamEvent $onFileLoaded;
     public BasicParamEvent $onStart;
     public BasicParamEvent $onEnd;
-    
+    public BasicParamEvent $onNewUrlFound;
+    public BasicParamEvent $onNewUrlAdded;
+
     function __construct(array $findOptions, int $settings, ICrawler $crawler, IActionParam $hrefFilter)
     {
         $this->findOptions = $findOptions;
@@ -47,13 +50,23 @@ abstract class BaseHtmlParser implements IParser
         $this->onFileLoaded = new BasicParamEvent();
         $this->onStart = new BasicParamEvent(); 
         $this->onEnd = new BasicParamEvent(); 
+        $this->onNewUrlFound = new BasicParamEvent();
+        $this->onNewUrlAdded = new BasicParamEvent();
         $this->onFilterSuccess = new BasicParamEvent();
         $this->onFilterFail = new BasicParamEvent();     
         $this->onLog= new BasicParamEvent();
     }
 
-    abstract public function parse($path);
-    abstract public function getPath();
+    public abstract function parse($url);
+
+    public function prepare($url)
+    {
+        $this->startUrl = $this->hrefFilter->run($url);
+    }
+    public function getPath()
+    {
+        return $this->startUrl;
+    }
 
     public function getCrawler()
     {
@@ -77,6 +90,12 @@ abstract class BaseHtmlParser implements IParser
     {
         $this->findOptions = $options;
     }
+
+    public function addOptions(IOption $options)
+    {
+        array_push($this->findOptions, $options);
+    }
+
     public function setSettings(int $settings)
     {
         $this->settings = $settings;
@@ -91,12 +110,22 @@ abstract class BaseHtmlParser implements IParser
         return $this->hrefFilter;
     }
 }
+class ParserMessage
+{
+    public $value;
+    public IOption $option;
+
+    function __construct($value, $option)
+    {
+        $this->value = $value;
+        $this->option = $option;
+    }
+}
 
 class HtmlParser extends BaseHtmlParser
 {
-    private $startUrl = '';
     private $startDomain = '';
-
+    private string  $curUrl = '';
     private array $urlVisitedStack = [];
     private array $urlToParseStack = [];
 
@@ -104,25 +133,58 @@ class HtmlParser extends BaseHtmlParser
     {
         $htmlCrawler =  new HtmlCrawler();
         $hrefFilter = new HrefFilter();
+        $this->addUrlFinderOption($findOptions);
+
         parent::__construct($findOptions, $settings, $htmlCrawler, $hrefFilter);
-    }
-    private function log($val)
-    {
-        $this->onLog->invoke($val);
     }
     public function getPath()
     {
         return $this->startUrl;
     }
+    private function addUrlFinderOption(&$findOptions)
+    {
+        if (empty($findOptions))
+        { 
+            $findOptions = [new Option('a', null, 
+                new Option('href', null))];
+            return;
+        }
+
+        for($i = 0; $i < count($findOptions); ++$i)
+        {
+            $tagOption = $findOptions[$i];
+            $tagOptionsArray = $tagOption->getOptions();
+            $val = $tagOption->getValue();
+            if ($val === 'a')
+            {
+                foreach($tagOptionsArray as $attrOption)
+                {
+                    if ($attrOption->getValue() == 'href')
+                    {
+                        return;
+                    }
+                }
+                array_push($tagOptionsArray, new Option('href', null));
+            }
+        }
+        array_push($findOptions, new Option('a', null, 
+            new Option('href', null)));
+    }
+
+    private function log($val)
+    {
+        //$this->onLog->invoke($val);
+    }
 
     public function parse($url)
     {       
-        $this->startUrl = $this->hrefFilter->run($url);;
+        parent::prepare($url);
+
         $this->startDomain = parse_url($this->startUrl , PHP_URL_HOST);
-        array_push($this->urlToParseStack, $this->startUrl);
+        $this->urlToParseStack[$this->startUrl] = '';
 
         $this->log("--------START--------");
-        $this->onStart->invoke($this->startUrl);    
+        $this->onStart->invoke($this->startUrl);   
 
         $this->parseJob();
 
@@ -134,69 +196,71 @@ class HtmlParser extends BaseHtmlParser
     {
         while (empty($this->urlToParseStack) === false)
         {
-            $url = array_pop($this->urlToParseStack);
-
-            $this->log("Creating DOM and loading HTML file from \"$this->startUrl\": ");
-            $this->onFileLoading->invoke($url);
+            $this->curUrl = array_key_last($this->urlToParseStack);
+            array_pop($this->urlToParseStack);
+            
+            $this->log("Creating DOM and loading HTML file from \"$this->curUrl\": ");
+            $this->onFileLoading->invoke($this->curUrl);
 
             try
             {
-                $this->crawler->load($url);
+                $this->crawler->load($this->curUrl);
             }
             catch(\Exception $ex)
             {
                 echo $ex;
             }
-            $this->onFileLoaded->invoke($url);
+            $this->onFileLoaded->invoke($this->curUrl);
 
             $this->crawlPage();
-            array_push($this->urlVisitedStack, $this->startUrl);
+            $this->urlVisitedStack[$this->curUrl] = '';        
         }
     }
 
     private function crawlPage()
     {
-        foreach($this->findOptions as $tagOptions)
+        foreach($this->findOptions as $tagOption)
         {
-            $elements = $this->crawler->crawl($tagOptions->getValue());
+            $elements = $this->crawler->crawl($tagOption->getValue());
             $this->log(count($elements) . " elements found");
 
             foreach($elements as $node)
             {
                 $this->onFind->invoke($node->nodeValue);
 
-                $this->parseElement($node, $tagOptions, $tagOptions->getFilter());
+                $this->parseElement($node, $tagOption, $tagOption->getFilter());
             }
         }       
     }
 
-    private function parseElement($node, $tagOptions, $tagFilter)
+    private function parseElement($node, $tagOption, $tagFilter)
     {
-        foreach($tagOptions->getOptions() as $attrOptions)
+        foreach($tagOption->getOptions() as $attrOption)
         {
-            $this->parseAttribute($node, $attrOptions);
+            $this->parseAttribute($node, $attrOption);
         }
-        return $this->doFilter($tagFilter, $node->nodeValue);
+        return $this->doFilter($tagFilter, $node->nodeValue, $attrOption);
     }
 
-    private function parseAttribute($nodeValue, $attrOptions)
+    private function parseAttribute($nodeValue, $attrOption)
     {
-        foreach ($attrOptions as $option)
-        {
-            $attrName = $option->getValue();
-            $attrValue = $nodeValue->getAttribute($attrName);
+        $attrName = $attrOption->getValue();
+        $attrValue = $nodeValue->getAttribute($attrName);
 
-            $newUrl = $this->doFilter($option->getFilter(), $attrValue);
+        if ($attrName == 'href')
+        {             
+            $newUrl = $this->hrefFilter->run($attrValue);
 
-            if ($attrName == 'href')
+            $this->onNewUrlFound->invoke($newUrl);
+
+            if ($this->canAddNewUrl($newUrl))
             {
-                $newUrl = $this->hrefFilter->run($newUrl);
-                if ($this->canAddNewUrl($newUrl))
-                {
-                    array_push($this->urlToParseStack, $newUrl);
-                }
+                $this->urlToParseStack[$newUrl] = '';
+                $this->onNewUrlAdded->invoke($newUrl);
             }
         }
+   
+        $this->doFilter($attrOption->getFilter(), $attrValue, $attrOption);    
     }
 
     private function canAddNewUrl($newUrl)
@@ -215,8 +279,10 @@ class HtmlParser extends BaseHtmlParser
     }
 
     private function isAlreadyVisited($url)
-    {               
-        return $url == $this->startUrl || array_search($url, $this->urlVisitedStack);      
+    {         
+        return $url == $this->startUrl || $url == $this->curUrl ||
+            array_key_exists ($url, $this->urlVisitedStack) ||
+            array_key_exists ($url, $this->urlToParseStack);      
     }
     private function canVisit($url)
     {
@@ -229,7 +295,7 @@ class HtmlParser extends BaseHtmlParser
             $this->isSettingsSet(ParserSettings::GoExternal));
     }
 
-    private function doFilter($filter, $val)
+    private function doFilter($filter, $val, $option)
     {
         if (empty($filter))
         {
@@ -240,14 +306,18 @@ class HtmlParser extends BaseHtmlParser
 
         if (isset($filterValue) && $filterValue !== false)
         {
+            $callbackMsg = new ParserMessage($filterValue, $option);
+
             $this->log("Success");  
-            $this->onFilterSuccess->invoke($filterValue);
+            $this->onFilterSuccess->invoke($callbackMsg);
             return $filterValue;
         }
         else
         {
+            $callbackMsg = new ParserMessage($val, $option);
+
             $this->log("Fail");  
-            $this->onFilterFail->invoke($filterValue);
+            $this->onFilterFail->invoke($callbackMsg);
         }
         return $val;
     }
