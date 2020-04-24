@@ -30,7 +30,7 @@ class HtmlCrawler implements ICrawler
             throw new \Exception("URL must not be empty while loading HTML file");
         }
 
-        return $this->isNoWarnings ? @$this->doc->loadHTMLFile($url) : $this->doc->loadHTMLFile($url);;
+        return $this->isNoWarnings ? @$this->doc->loadHTMLFile($url) : $this->doc->loadHTMLFile($url);
     }
    
     public function crawl($tagName) : \DOMNodeList
