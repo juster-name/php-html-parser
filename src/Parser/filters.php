@@ -144,21 +144,22 @@ class HrefFilter implements IActionParam
 class ImgFilter implements IActionParam
 {
     public BaseHtmlParser $htmlParser;
-    public bool $externalPass;
+    public bool $externalDomPass;
 
-    function __construct(BaseHtmlParser &$htmlParser, bool $externalPass = false)
+    function __construct(BaseHtmlParser &$htmlParser, bool $externalDomPass = true)
     {
         $this->htmlParser = $htmlParser;
-        $this->externalPass = $externalPass;
+        $this->externalDomPass = $externalDomPass;
     }
 
     public function run($var)
     {
-        if (parse_url($var, PHP_URL_HOST) != parse_url($this->htmlParser->getPath(), PHP_URL_HOST))
+        if ($this->externalDomPass != true &&
+            parse_url($var, PHP_URL_HOST) != parse_url($this->htmlParser->getPath(), PHP_URL_HOST))
         {
             return false;
         }
-        return $this->htmlParser->getHrefFilter()->run($var);
+        return $var;//$this->htmlParser->getHrefFilter()->run($var);
     }
     public function getName() : string
     {

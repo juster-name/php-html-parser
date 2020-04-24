@@ -9,7 +9,7 @@ $internal = [];
 $external = [];
 $imgs = [];
 
-$url = "https://google.com.ua/";
+$url = "https://www.deviantart.com/";
 
 use Test\Parser\ParserSettings as PS;
 $p = new HtmlParser([], PS::Recursive);
@@ -19,7 +19,7 @@ $saveImgAction= new InvokeActionParam(function($msg) use (&$imgs, &$internal, &$
 {     
     //$fullUrl = $p->hrefFilter->run($urlArg);
     $value = $msg->value;
-    
+    echo $value . "\n";
     $tagName = $msg->option->getParent()->getValue() ?: '';
     $attrName = $msg->option->getValue();
 
@@ -29,7 +29,7 @@ $saveImgAction= new InvokeActionParam(function($msg) use (&$imgs, &$internal, &$
         {
             return;
         }
-        _logInFile($value, 'imgs.txt');
+        //_logInFile($value, 'imgs.txt');
         $imgs[$value] = '';
     }
 
@@ -37,7 +37,7 @@ $saveImgAction= new InvokeActionParam(function($msg) use (&$imgs, &$internal, &$
 
 
 $imgOpts = new Option('img', null, new Option('src', new ImgFilter($p)));
-
+$p->setCrawler(new HtmlCrawler());
 $p->addOptions($imgOpts);
 
 $logAction = new UserCallActionParam("Test\\Parser\\_log");
@@ -53,7 +53,7 @@ $saveInternalAction = new InvokeActionParam(function($urlArg) use (&$internal, &
             return;
         }
         _log($urlArg);
-        _logInFile($urlArg, 'internals.txt');
+        //_logInFile($urlArg, 'internals.txt');
         $internal[$urlArg] = '';
     }
 });
@@ -66,8 +66,8 @@ $saveExternalAction = new InvokeActionParam(function($urlArg) use (&$external, &
         {
             return;
         }
-        _log($urlArg);
-        _logInFile($urlArg, 'externals.txt');
+        //_log($urlArg);
+        //_logInFile($urlArg, 'externals.txt');
         $external[$urlArg] = '';
     }
 });
@@ -77,7 +77,7 @@ $saveExternalAction = new InvokeActionParam(function($urlArg) use (&$external, &
 $p->onFilterSuccess->add($saveImgAction);
 $p->onNewUrlFound->add($saveInternalAction);
 $p->onNewUrlFound->add($saveExternalAction);
-
+$p->onFileLoaded->add($logAction);
 $p->parse($url);
 
 echo "\n\n INTERNALS: ";

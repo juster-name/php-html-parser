@@ -23,6 +23,7 @@ abstract class BaseHtmlParser implements IParser
     public array $findOptions;
     public IActionParam $hrefFilter;
     protected $startUrl = '';
+    protected IOption $baseOption;
 
     public int $settings;
     public BasicParamEvent $onLog;
@@ -43,6 +44,7 @@ abstract class BaseHtmlParser implements IParser
         $this->hrefFilter = $hrefFilter;
         $this->settings = $settings;
         $this->crawler = $crawler;
+        $this->baseOption = new Option('a', null, new Option('href', null));
 
         $this->onFind = new BasicParamEvent();
         $this->onError = new BasicParamEvent();
@@ -128,47 +130,18 @@ class HtmlParser extends BaseHtmlParser
     private string  $curUrl = '';
     private array $urlVisitedStack = [];
     private array $urlToParseStack = [];
+    private const MAX_PARSE_STACK_SIZE = 3;
 
     function __construct(array $findOptions, int $settings)
     {
         $htmlCrawler =  new HtmlCrawler();
         $hrefFilter = new HrefFilter();
-        $this->addUrlFinderOption($findOptions);
 
         parent::__construct($findOptions, $settings, $htmlCrawler, $hrefFilter);
     }
     public function getPath()
     {
         return $this->startUrl;
-    }
-    private function addUrlFinderOption(&$findOptions)
-    {
-        if (empty($findOptions))
-        { 
-            $findOptions = [new Option('a', null, 
-                new Option('href', null))];
-            return;
-        }
-
-        for($i = 0; $i < count($findOptions); ++$i)
-        {
-            $tagOption = $findOptions[$i];
-            $tagOptionsArray = $tagOption->getOptions();
-            $val = $tagOption->getValue();
-            if ($val === 'a')
-            {
-                foreach($tagOptionsArray as $attrOption)
-                {
-                    if ($attrOption->getValue() == 'href')
-                    {
-                        return;
-                    }
-                }
-                array_push($tagOptionsArray, new Option('href', null));
-            }
-        }
-        array_push($findOptions, new Option('a', null, 
-            new Option('href', null)));
     }
 
     private function log($val)
@@ -186,13 +159,13 @@ class HtmlParser extends BaseHtmlParser
         $this->log("--------START--------");
         $this->onStart->invoke($this->startUrl);   
 
-        $this->parseJob();
+        $this->parseJob(HtmlParser::MAX_PARSE_STACK_SIZE);
 
         $this->onEnd->invoke($this->startUrl);    
         $this->log("-------END--------");
     }
 
-    private function parseJob()
+    private function parseJob($urlCount)
     {
         while (empty($this->urlToParseStack) === false)
         {
@@ -211,38 +184,41 @@ class HtmlParser extends BaseHtmlParser
                 echo $ex;
             }
             $this->onFileLoaded->invoke($this->curUrl);
+            
+            $this->crawlPage($this->findOptions);
+            $this->urlVisitedStack[$this->curUrl] = '';  
+            $this->crawlPage([$this->baseOption], $urlCount);
 
-            $this->crawlPage();
-            $this->urlVisitedStack[$this->curUrl] = '';        
+       
         }
     }
 
-    private function crawlPage()
+    private function crawlPage(array $mainOptions, int $maxCount = -1)
     {
-        foreach($this->findOptions as $tagOption)
+        foreach($mainOptions as $option)
         {
-            $elements = $this->crawler->crawl($tagOption->getValue());
-            $this->log(count($elements) . " elements found");
+            $optValue = $option->getValue();
+            $tagElements = $this->crawler->crawl($optValue);
+            $this->log(count($tagElements) . " '$optValue' found");
 
-            foreach($elements as $node)
+            foreach($tagElements as $node)
             {
                 $this->onFind->invoke($node->nodeValue);
-
-                $this->parseElement($node, $tagOption, $tagOption->getFilter());
+                $this->parseElement($node, $option);
             }
-        }       
+        }
     }
 
-    private function parseElement($node, $tagOption, $tagFilter)
+    private function parseElement($node, IOption $tagOption)
     {
         foreach($tagOption->getOptions() as $attrOption)
         {
             $this->parseAttribute($node, $attrOption);
         }
-        return $this->doFilter($tagFilter, $node->nodeValue, $attrOption);
+        return $this->doFilter($node->nodeValue, $attrOption);
     }
 
-    private function parseAttribute($nodeValue, $attrOption)
+    private function parseAttribute($nodeValue, IOption $attrOption)
     {
         $attrName = $attrOption->getValue();
         $attrValue = $nodeValue->getAttribute($attrName);
@@ -260,7 +236,7 @@ class HtmlParser extends BaseHtmlParser
             }
         }
    
-        $this->doFilter($attrOption->getFilter(), $attrValue, $attrOption);    
+        $this->doFilter($attrValue, $attrOption);    
     }
 
     private function canAddNewUrl($newUrl)
@@ -295,14 +271,10 @@ class HtmlParser extends BaseHtmlParser
             $this->isSettingsSet(ParserSettings::GoExternal));
     }
 
-    private function doFilter($filter, $val, $option)
+    private function doFilter($val, IOption $option)
     {
-        if (empty($filter))
-        {
-            return;
-        }
         $this->log("Filtering \"$val\"");
-        $filterValue = $filter->run($val);
+        $filterValue = $option->getFilter()->run($val);
 
         if (isset($filterValue) && $filterValue !== false)
         {
